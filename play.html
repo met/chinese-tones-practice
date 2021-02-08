@@ -17,36 +17,7 @@
 
 <div id="answer" class="collapse mb-3">Start text first.</div>
 
-<div id="audiolist" class="collapse">
-	<div>
-		<audio controls data-name="ma 1" src="mp3/ma/1.mp3"></audio>
-		<audio controls data-name="ma 2" src="mp3/ma/2.mp3"></audio>
-		<audio controls data-name="ma 3" src="mp3/ma/3.mp3"></audio>
-		<audio controls data-name="ma 4" src="mp3/ma/4.mp3"></audio>
-		<audio controls data-name="ma 0" src="mp3/ma/0.mp3"></audio>
-	</div>
-
-	<div>
-		<audio controls data-name="xing 1" src="mp3/xing/1.mp3"></audio>
-		<audio controls data-name="xing 2" src="mp3/xing/2.mp3"></audio>
-		<audio controls data-name="xing 3" src="mp3/xing/3.mp3"></audio>
-		<audio controls data-name="xing 4" src="mp3/xing/4.mp3"></audio>
-	</div>
-
-	<div>
-		<audio controls data-name="xing 1" src="mp3/xue/1.mp3"></audio>
-		<audio controls data-name="xing 2" src="mp3/xue/2.mp3"></audio>
-		<audio controls data-name="xing 3" src="mp3/xue/3.mp3"></audio>
-		<audio controls data-name="xing 4" src="mp3/xue/4.mp3"></audio>
-	</div>
-
-	<div>
-		<audio controls data-name="zhu 1" src="mp3/zhu/1.mp3"></audio>
-		<audio controls data-name="zhu 2" src="mp3/zhu/2.mp3"></audio>
-		<audio controls data-name="zhu 3" src="mp3/zhu/3.mp3"></audio>
-		<audio controls data-name="zhu 4" src="mp3/zhu/4.mp3"></audio>
-	</div>
-</div>
+<div id="audiolist" class="collapse"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" type="text/javascript" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
 
@@ -54,6 +25,117 @@
 "use strict";
 
 let lastPlayed = null;
+
+let mp3FilesPrefix = "tone_perfect/mp3/";
+let mp3List = {
+	"ma": [
+		"ma1_MV1_MP3.mp3", "ma2_MV1_MP3.mp3", "ma3_MV1_MP3.mp3", "ma4_MV1_MP3.mp3"
+	],
+	"a": [
+		"a1_MV1_MP3.mp3", "a2_MV1_MP3.mp3", "a3_MV1_MP3.mp3", "a4_MV1_MP3.mp3"
+	],
+	"zuo": [
+		"zuo1_MV1_MP3.mp3", "zuo2_MV1_MP3.mp3", "zuo3_MV1_MP3.mp3", "zuo4_MV1_MP3.mp3"
+	]
+};
+
+// https://tone.lib.msu.edu/tone/6386/datastream/PROXY_MP3
+
+let pinyins;
+
+
+function generateAudios(mp3FilesPrefix, mp3List) {
+	let audioListEl = document.getElementById("audiolist");
+
+
+	for (let syllable in mp3List) {
+		//console.log(syllable, mp3List[syllable]);
+
+		let tonesDiv = document.createElement("div");
+		tonesDiv.id = syllable;
+
+		for (let tone in mp3List[syllable]) {
+			//console.log(tone, mp3List[syllable][tone]);
+
+			let mp3file = mp3List[syllable][tone];
+			let audioEl = document.createElement("audio");
+
+			audioEl.src = mp3FilesPrefix + mp3file;
+			audioEl.dataset.name = syllable + " " + String(Number(tone)+1);
+			audioEl.dataset.syllable = syllable;
+			audioEl.dataset.tone = Number(tone)+1;
+			audioEl.dataset.filename = mp3file;
+			audioEl.dataset.description = syllable + " " + String(Number(tone)+1) + " (" + mp3file + ")";
+			audioEl.controls = true;
+
+			tonesDiv.appendChild(audioEl);
+		}
+
+		audioListEl.appendChild(tonesDiv);
+
+	}
+}
+
+function loadData() {
+	fetch('pinyins.json')
+		.then(response => response.json())
+		.then(data => {
+			pinyins = data;
+			//console.log(data)
+		});
+}
+
+
+// pinyin = string
+// tone = 1, 2, 3 or 4
+// voice = FV1, FV2, FV3, FV4, MV1, MV2 or MV3
+// Eg. playVoice("a", 1, "mv1") = play a1 with MV1 = a1_MV1_MP3.mp3
+function playVoice(pinyin, tone, voice) {
+	if (pinyin && tone && voice) {
+		pinyin = String(pinyin).toLowerCase();
+		tone = parseInt(tone);
+		voice = String(voice).toUpperCase();
+
+		if (pinyin.match(/^[a-Z]{1,6}$/) && voice.match(/^[MF]V[1-3]$/) && tone >= 1 && tone <= 4 ) {
+			let filename = pinyin + String(tone) + "_" + voice + "_MP3.mp3";
+			console.debug("Play", filename);
+			playFile(filename);
+		}
+	}
+}
+
+// Eg. playFile("a1_FV1_MP3.mp3"), playFile("zhuang1_FV2_MP3.mp3")
+function playFile(filename) {
+	if (filename && String(filename)) {
+		filename = String(filename);
+
+		if (filename.match(/^[a-z]{1,6}[1-4]_[MF]V[1-3]_MP3\.mp3$/)) {
+			let url = "tone_perfect/mp3/" + filename;
+			playURL(url);
+		}
+	}
+}
+
+// Eg. playId(1584)
+function playId(id) {
+	if (id && parseInt(id)) {
+		id = parseInt(id);
+		if (id > 1000 && id < 12000) {
+			const url = `https://tone.lib.msu.edu/tone/${id}/datastream/PROXY_MP3`;
+			console.debug("Play", id);
+			playURL(url);
+		}
+	}
+}
+
+// Eg. playURL("https://tone.lib.msu.edu/tone/1584/datastream/PROXY_MP3")
+function playURL(url) {
+	if (url) {
+		console.debug("Play", url);
+		let audio = new Audio(url);
+		audio.play();
+	}
+}
 
 function initUI() {
 	document.getElementById("btn-playrandom").onclick = function(event) {
@@ -72,6 +154,8 @@ function initUI() {
 	}
 }
 
+loadData();
+//generateAudios(mp3FilesPrefix, mp3List);
 initUI();
 
 function playRandom() {
@@ -88,11 +172,12 @@ function playRandom() {
 
 	let audioURL = audio.currentSrc;
 	let audioName = audio.dataset.name;
+	let audioFilename = audio.dataset.filename
 
 	let answer;
 
-	if (audioName) {
-		answer = audioName;
+	if (audioName && audioFilename) {
+		answer = "<b>" + audioName + "</b> - " + audioFilename;
 	}
 	else {
 		answer = audioURL;
