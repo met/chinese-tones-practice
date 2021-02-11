@@ -11,17 +11,17 @@
 <div class="card mt-3 ps-3 pe-3 container">
 <h5 class="fs-5 fw-bold mt-4 mb-1">Play a Chinese syllable:</h5>
 <p class="mt-1 mb-3">
-	<button id="btn-playnew" class="btn btn-primary mt-2 fs-6" type="button">Play New <span id="btn-playnew-spinner" class="collapse spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
-	<input id="btn-repeat" type="button" class="btn btn-secondary mt-2 fs-6" value="Repeat">	
-	<input id="btn-answer" type="button" class="btn btn-success mt-2 fs-6" data-bs-toggle="collapse" data-bs-target="#answer" aria-expanded="false" aria-controls="answer" value="Show Answer">	
+	<button id="btn-playnew" class="btn btn-primary btn-lg mt-2 fs-6" type="button">Play New <span id="btn-playnew-spinner" class="collapse spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
+	<input id="btn-repeat" type="button" class="btn btn-secondary btn-lg mt-2 fs-6" value="Repeat">	
+	<input id="btn-answer" type="button" class="btn btn-success btn-lg mt-2 fs-6" data-bs-toggle="collapse" data-bs-target="#answer" aria-expanded="false" aria-controls="answer" value="See Answer">	
 </p>
 
 <h5 class="fs-5 fw-bold mt-4 mb-2">Choose your answer:</h5>
 <div id="user-answers">
-	<input id="btn-select1" type="button" class="btn btn-info mt-2 me-2 fs-4" value="1 -">
-	<input id="btn-select2" type="button" class="btn btn-info mt-2 me-2 fs-4" value="2 /">
-	<input id="btn-select3" type="button" class="btn btn-info mt-2 me-2 fs-4" value="3 v">
-	<input id="btn-select4" type="button" class="btn btn-info mt-2 me-2 fs-4" value="4 \">
+	<input id="btn-select1" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="1 -">
+	<input id="btn-select2" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="2 /">
+	<input id="btn-select3" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="3 v">
+	<input id="btn-select4" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="4 \">
 </div>
 
 <div id="status" class="mt-4 mb-1 fw-bold"></div>
@@ -269,7 +269,7 @@ function playNew() {
 	appState.lastPlayed = p;
 
 	resetAnswers();
-	let answer = "<b>" + sanitize(p.pinyin + " " + String(p.tone)) + "</b> <a href=\"https://tone.lib.msu.edu/tone/" + sanitize(String(p.id), "\"") + "\">" + sanitize(p.syllabe + " " + String(p.id)) + "</a>";
+	let answer = "<b>" + sanitize(p.pinyin + " " + String(p.tone)) + "</b> <a href=\"https://tone.lib.msu.edu/tone/" + sanitize(String(p.id), "\"") + "\" target=\"_blank\">" + sanitize(p.syllabe + " " + String(p.id)) + "</a>";
 	setAnswer(answer);
 
 	// Show spinning wheel during audio download
