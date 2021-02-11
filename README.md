@@ -1,8 +1,7 @@
 # Chinese tones practice
 
-**HTML+JS app for learning Chinese tones**
+**Web app for a practice of four Chinese tones recognition.**
 
-**You need MP3 sound files** with Chinese tones recorded.
-These **are not** part of this repository.
-You can find them as part of common Chinese textbook.
-Or you can download them from [Tones perfect project](https://tone.lib.msu.edu/).
+This application is using audio files from the **Tone Perfect** database:
+
+> Catherine Ryu, Mandarin Tone Perception & Production Team, and Michigan State University Libraries. Tone Perfect: Multimodal Database for Mandarin Chinese.  https://tone.lib.msu.edu/
