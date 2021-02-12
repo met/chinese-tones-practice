@@ -268,13 +268,17 @@ function playNew() {
 	let p = chooseRandomPinyin();
 	appState.lastPlayed = p;
 
-	resetAnswers();
 	let answer = "<b>" + sanitize(p.pinyin + " " + String(p.tone)) + "</b> <a href=\"https://tone.lib.msu.edu/tone/" + sanitize(String(p.id), "\"") + "\" target=\"_blank\">" + sanitize(p.syllabe + " " + String(p.id)) + "</a>";
 	setAnswer(answer);
 
 	// Show spinning wheel during audio download
 	showSpinningWheel();
-	playId(p.id, function() { hideSpinningWheel(); });
+	playId(p.id, function() {
+		hideSpinningWheel();
+		resetAnswers();
+		document.getElementById("btn-repeat").disabled = false;
+		document.getElementById("btn-answer").disabled = false;
+	});
 }
 
 
@@ -307,7 +311,12 @@ function resetAnswers() {
 	answerEl.classList.remove("show"); // Hide answer
 	statusEl.innerHTML = "";
 
-	buttons.forEach( element => { element.classList.add("btn-info"); element.classList.remove("btn-danger"); element.classList.remove("btn-success"); } );
+	buttons.forEach( element => {
+		element.disabled = false;
+		element.classList.add("btn-info");
+		element.classList.remove("btn-danger");
+		element.classList.remove("btn-success");
+	});
 
 	appState.solved = false;
 	appState.guesses = 0;
@@ -367,6 +376,12 @@ function selectAnswer(index) {
 }
 
 function initUI() {
+
+	["btn-repeat", "btn-answer", "btn-select1", "btn-select2", "btn-select3", "btn-select4"].forEach(elementName => {
+		document.getElementById(elementName).disabled = true;
+	});
+
+
 	document.getElementById("btn-playnew").onclick = function(event) {
 		playNew();
 		return false;
