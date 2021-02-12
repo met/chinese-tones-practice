@@ -59,7 +59,7 @@
 	<h5 class="fs-5 fw-bold">About author:</h5>
 	<p>My name is <a href="https://www.linkedin.com/in/hassman/">Martin Hassman</a>, I'm an IT professional from the Czech Republic.
 	I love learning laguanges and developing applications that help with learning (eg. <a href="https://github.com/met/subfilter/wiki">Subfilter for Netflix</a>).
-	I am volunteer at <a href="https://cesko.digital/en.html">Cesko.Digital</a>.</p>
+	I'm volunteer at <a href="https://cesko.digital/en.html">Cesko.Digital</a>.</p>
 </div>
 
 <footer class="text-center fst-italic pt-4">
@@ -288,17 +288,21 @@ function playLastAgain() {
 	}
 }
 
+
 function showSpinningWheel() {	
 	let loadingEl = document.getElementById("btn-playnew-spinner");
 	loadingEl.classList.remove("collapse");
 
 }
 
+
 function hideSpinningWheel() {
 	let loadingEl = document.getElementById("btn-playnew-spinner");
 	loadingEl.classList.add("collapse");	
 }
 
+
+// prepare answer buttons for the next round
 function resetAnswers() {
 	let answerEl   = document.getElementById("answer");
 	let statusEl   = document.getElementById("status");	
@@ -313,6 +317,7 @@ function resetAnswers() {
 
 	buttons.forEach( element => {
 		element.disabled = false;
+		element.dataset.guessed = false;
 		element.classList.add("btn-info");
 		element.classList.remove("btn-danger");
 		element.classList.remove("btn-success");
@@ -322,10 +327,12 @@ function resetAnswers() {
 	appState.guesses = 0;
 }
 
+
 function setAnswer(text) {
 	let answerEl = document.getElementById("answer-text");
 	answerEl.innerHTML = text;
 }
+
 
 // Select answer 1-4
 function selectAnswer(index) {
@@ -341,7 +348,13 @@ function selectAnswer(index) {
 	let btnSelect4 = document.getElementById("btn-select4");
 
 	let buttons = [btnSelect1, btnSelect2, btnSelect3, btnSelect4]
+
+	if (buttons[index-1].dataset.guessed == "true") {
+		return; // already used this answer in this round
+	}
+
 	appState.guesses++;
+	buttons[index-1].dataset.guessed = true;
 
 	// Correct answer
 	if (index === appState.lastPlayed.tone) {
@@ -352,16 +365,16 @@ function selectAnswer(index) {
 
 		if (appState.guesses > 1) {
 			if (appState.guesses < 4) {
-				statusEl.innerHTML = "Correct! 😀 " + appState.guesses + " guesses.";
+				statusEl.innerHTML = "Correct! 😀 " + appState.guesses + " guesses. Try another one!";
 			}
 			else {
 				// Too bad
-				statusEl.innerHTML = "Correct! But " + appState.guesses + " guesses. 😞";
+				statusEl.innerHTML = "Correct! But " + appState.guesses + " guesses. 😞 Better luck next time!";
 			}
 
 		}
 		else {
-			statusEl.innerHTML = "Correct! 😀";
+			statusEl.innerHTML = "Correct! 😀 Try another one!";
 		}
 
 		appState.solved = true;
@@ -371,7 +384,7 @@ function selectAnswer(index) {
 		buttons[index-1].classList.add("btn-danger");
 		buttons[index-1].classList.remove("btn-info");
 
-		statusEl.innerHTML = "Wrong. Try again! 😞";
+		statusEl.innerHTML = "Wrong. Guess again! 😞";
 	}
 }
 
