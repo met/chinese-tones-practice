@@ -72,7 +72,7 @@
 "use strict";
 
 let appData = { pinyinsToId: undefined, syllableToPinyins: undefined, pinyins: undefined, syllables: undefined, loaded: false };
-let appState = { lastPlayed: null, solved: false, guesses: 0, sessionRounds: 0, sessionGuesses: 0, sessionGoodGuesses: 0, };
+let appState = { lastPlayed: null, solved: false, guesses: 0, sessionRounds: 0, sessionGuesses: 0, sessionGoodGuesses: 0, lastAudio: null };
 
 
 function loadAppData(appData) {
@@ -164,7 +164,7 @@ function playVoice(pinyin, tone, voice, callback) {
 		if (pinyin.match(/^[a-z]{1,6}$/) && voice.match(/^[MF]V[1-3]$/) && tone >= 1 && tone <= 4 ) {
 			let filename = pinyin + String(tone) + "_" + voice + "_MP3.mp3";
 			console.debug("Play", filename);
-			playFile(filename, callback);
+			return playFile(filename, callback);
 		}
 	}
 }
@@ -176,7 +176,7 @@ function playFile(filename, callback) {
 
 		if (filename.match(/^[a-z]{1,6}[1-4]_[MF]V[1-3]_MP3\.mp3$/)) {
 			let url = "tone_perfect/mp3/" + filename;
-			playURL(url, callback);
+			return playURL(url, callback);
 		}
 	}
 }
@@ -188,11 +188,13 @@ function playId(id, callback) {
 		if (id > 1000 && id < 12000) {
 			const url = `https://tone.lib.msu.edu/tone/${id}/datastream/PROXY_MP3`;
 			console.debug("Play", id);
-			playURL(url, callback);
+			return playURL(url, callback);
 		}
 	}
 }
 
+// Return reference to audio element.
+// When playing started, call callback if defined
 // Eg. playURL("https://tone.lib.msu.edu/tone/1584/datastream/PROXY_MP3")
 function playURL(url, callback) {
 	if (url) {
@@ -201,9 +203,15 @@ function playURL(url, callback) {
 		audio.play().then(e => {
 			if (callback) {callback();}
 		});
+		return audio;
 	}
 }
 
+function playRandom() {
+	let p = chooseRandomPinyin();
+	console.debug(p);
+	return playId(p.id);
+}
 
 function chooseRandomPinyin() {
 	let syllables = appData.syllables;
@@ -230,13 +238,6 @@ function chooseRandomPinyin() {
 		console.warn("Cannot find pinyin in pinyinsToId:", randomPinyin);
 		return null;
 	}
-}
-
-function playRandom() {
-	let p = chooseRandomPinyin();
-	console.debug(p);
-	playId(p.id);
-
 }
 
 // Simple HTML text sanitizer
@@ -276,19 +277,27 @@ function playNew() {
 	showSpinningWheel();
 	disableAnswers();
 
-	playId(p.id, function() {
+	let audio = playId(p.id, function() {
 		hideSpinningWheel();
 		resetAnswers();
 		setAnswer(answer);
 		document.getElementById("btn-repeat").disabled = false;
 		document.getElementById("btn-answer").disabled = false;
 	});
+
+	appState.lastAudio = audio;
 }
 
 
 function playLastAgain() {
 	if (appState.lastPlayed) {
-		playId(appState.lastPlayed.id)
+		if (appState.lastAudio) {
+			let audio = appState.lastAudio;
+			audio.play();
+		}
+		else {
+			playId(appState.lastPlayed.id)
+		}
 	}
 }
 
