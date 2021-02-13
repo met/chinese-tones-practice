@@ -292,7 +292,7 @@ function playNew() {
 	let p = chooseRandomPinyin();
 	appState.lastPlayed = p;
 
-	let answer = `<b>${p.pinyin} ${p.tone}</b> - tone details: <a href=https://tone.lib.msu.edu/tone/${p.id}" target="_blank">${p.syllable}  ${p.id}</a>`;
+	let answer = `<b>${p.pinyin} ${p.tone}</b> - tone details: <a href="https://tone.lib.msu.edu/tone/${p.id}" target="_blank">${p.syllable}  ${p.id}</a>`;
 
 	// Show spinning wheel during audio download
 	showSpinningWheel();
