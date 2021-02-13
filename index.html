@@ -13,20 +13,20 @@
 	<p class="mt-1 mb-3">
 		<button id="btn-playnew" class="btn btn-primary btn-lg mt-2 fs-6" type="button">Play New <span id="btn-playnew-spinner" class="collapse spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
 		<input id="btn-repeat" type="button" class="btn btn-secondary btn-lg mt-2 fs-6" value="Repeat">	
-		<input id="btn-answer" type="button" class="btn btn-success btn-lg mt-2 fs-6" data-bs-toggle="collapse" data-bs-target="#answer" aria-expanded="false" aria-controls="answer" value="See Answer">	
+		<input id="btn-answer" type="button" class="btn btn-success btn-lg mt-2 fs-6" data-bs-toggle="collapse" data-bs-target="#answer" aria-expanded="false" aria-controls="answer" value="See Solution">
 	</p>
 
 	<h5 class="fs-5 fw-bold mt-4 mb-2">Choose your answer:</h5>
 	<div id="user-answers">
-		<input id="btn-select1" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="1 -">
-		<input id="btn-select2" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="2 /">
-		<input id="btn-select3" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="3 v">
-		<input id="btn-select4" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="4 \">
+		<input id="btn-select1" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="1 -" data-tonenumber="1">
+		<input id="btn-select2" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="2 /" data-tonenumber="2">
+		<input id="btn-select3" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="3 v" data-tonenumber="3">
+		<input id="btn-select4" type="button" class="btn btn-info btn-lg mt-2 me-2 fs-4" value="4 \" data-tonenumber="4">
 	</div>
 
 	<div id="status" class="mt-4 mb-1 fw-bold"></div>
 	<div id="answer" class="collapse mb-3 mt-4 p-2 card text-dark bg-light border-dark">
-		<h5 class="fs-5 fw-bold">Correct answer:</h5>
+		<h5 class="fs-5 fw-bold">Solution:</h5>
 		<p id="answer-text">Press <b>Play New</b> first.</p>
 	</div>
 	<div id="session-score" class="mt-2 mb-3"></div>
@@ -42,7 +42,7 @@
 		<li>Press <tt>Play New</tt> or <kbd>P</kbd> key or <kbd>8</kbd> key to play random Chinese syllable.</li>
 		<li>Press <tt>Repeat Last</tt> or <kbd>R</kbd> key or <kbd>5</kbd> key to repeat audio.</li>
 		<li>Press one of fours <tt>answer buttons</tt> or key <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd> to guess the answer.</li>
-		<li>Press <tt>Show Answer</tt> or <kbd>A</kbd> key or <kbd>6</kbd> key to show correct answer (there is a link for details about curren sound).</li>
+		<!--li>Press <tt>Show Answer</tt> or <kbd>A</kbd> key or <kbd>6</kbd> key to show correct answer (there is a link for details about curren sound).</li-->
 		<li>Repeat with next sound.</li>
 	</ol>
 
@@ -72,7 +72,15 @@
 "use strict";
 
 let appData = { pinyinsToId: undefined, syllableToPinyins: undefined, pinyins: undefined, syllables: undefined, loaded: false };
-let appState = { lastPlayed: null, solved: false, guesses: 0, sessionRounds: 0, sessionGuesses: 0, sessionGoodGuesses: 0, lastAudio: null };
+let appState = { lastPlayed: null, // lastPlayed = {syllable, tone, pinyin, id }
+	lastAudio: null, solved: false, guesses: 0,
+	session: { rounds:0, answers: [ // appState.session.answers is an array of user's answers, divided into 4 arrays by success rate
+		[], // answers solved by 1st guess
+		[], // answers solved by 2nd guess etc.
+		[],
+		[]
+	], guesses:0, goodGuesses:0},
+};
 
 
 function loadAppData(appData) {
@@ -119,7 +127,7 @@ function processPinyinsToId(pinyinsToId) {
 	}
 
 	console.debug("Pinyins loaded", pinyins.length);
-	if (pinyins.length != 1640) {  // Expected 1640 (= 410 syllabes * 4 tones)
+	if (pinyins.length != 1640) {  // Expected 1640 (= 410 syllables * 4 tones)
 		console.warn("Unexpected number of pinyins", pinyins.length);
 	}
 
@@ -128,7 +136,7 @@ function processPinyinsToId(pinyinsToId) {
 }
 
 
-// Check data validity, return sorted array of syllabes
+// Check data validity, return sorted array of syllables
 function processSyllableToPinyins(syllableToPinyins) {
 	let syllables = [];
 
@@ -142,7 +150,7 @@ function processSyllableToPinyins(syllableToPinyins) {
 	}
 
 	console.debug("Syllables loaded:", syllables.length);
-	if (syllables.length != 410) { // expecting 410 syllabes (410 syllabes * 4 tones * 6 voices = 9840 sounds)
+	if (syllables.length != 410) { // expecting 410 syllables (410 syllables * 4 tones * 6 voices = 9840 sounds)
 		console.warn("Unexpected number of syllables", syllables.length);
 	}
 
@@ -231,8 +239,9 @@ function chooseRandomPinyin() {
 		let randomVoiceIndex = Math.floor(Math.random() * randomVoiceSet.length);
 		let randomId = randomVoiceSet[randomVoiceIndex];
 		//console.log(randomId);
-		//playId(randomId); return ...
-		return {"syllabe": randomSyllable, "tone": indexToTone(randomToneIndex), "pinyin": randomPinyin, "id": randomId};
+
+		// Sanitize syllable and pinyin strings in case  there were some malicious data in JSON files, randomId is sanitizes by conversion Number(randomId)
+		return {"syllable": sanitizePinyin(randomSyllable), "tone": indexToTone(randomToneIndex), "pinyin": sanitizePinyin(randomPinyin), "id": Number(randomId)};
 	}
 	else {
 		console.warn("Cannot find pinyin in pinyinsToId:", randomPinyin);
@@ -240,7 +249,20 @@ function chooseRandomPinyin() {
 	}
 }
 
-// Simple HTML text sanitizer
+
+// Simple sanitizer. Remove bad characters from pinyins
+function sanitizePinyin(text) {
+	if (typeof(text) == "number") {
+		text = String(text);
+	}
+
+	// Remove all: &<>"'
+	// These shoudn't be used in syllables and pinyins by any chance
+	return text.replaceAll("&", "").replaceAll("<", "").replaceAll(">", "").replaceAll('"', "").replaceAll("'", "");
+}
+
+// Simple HTML text sanitizer, escape suspicious characters
+// and remove removeChar if defined
 function sanitize(text, removeChar) {
 	if (typeof(text) == "number") {
 		text = String(text);
@@ -269,9 +291,8 @@ function playNew() {
 
 	let p = chooseRandomPinyin();
 	appState.lastPlayed = p;
-	appState.sessionRounds++;
 
-	let answer = "<b>" + sanitize(p.pinyin + " " + String(p.tone)) + "</b> - tone details: <a href=\"https://tone.lib.msu.edu/tone/" + sanitize(String(p.id), "\"") + "\" target=\"_blank\">" + sanitize(p.syllabe + " " + String(p.id)) + "</a>";
+	let answer = `<b>${p.pinyin} ${p.tone}</b> - tone details: <a href=https://tone.lib.msu.edu/tone/${p.id}" target="_blank">${p.syllable}  ${p.id}</a>`;
 
 	// Show spinning wheel during audio download
 	showSpinningWheel();
@@ -280,7 +301,7 @@ function playNew() {
 	let audio = playId(p.id, function() {
 		hideSpinningWheel();
 		resetAnswers();
-		setAnswer(answer);
+		setAnswerText(answer);
 		document.getElementById("btn-repeat").disabled = false;
 		document.getElementById("btn-answer").disabled = false;
 	});
@@ -305,7 +326,6 @@ function playLastAgain() {
 function showSpinningWheel() {	
 	let loadingEl = document.getElementById("btn-playnew-spinner");
 	loadingEl.classList.remove("collapse");
-
 }
 
 
@@ -323,6 +343,7 @@ function getAnswerButtons() {
 
 	return [btnSelect1, btnSelect2, btnSelect3, btnSelect4];
 }
+
 
 function disableAnswers() {
 	let buttons = getAnswerButtons();
@@ -353,9 +374,31 @@ function resetAnswers() {
 }
 
 
-function setAnswer(text) {
+function setAnswerText(text) {
 	let answerEl = document.getElementById("answer-text");
 	answerEl.innerHTML = text;
+}
+
+
+function updateScore(scoreID, session) {
+	let scoreEl = document.getElementById(scoreID);
+	let ordinalNumbers = ["1st", "2nd", "3rd", "4th"];
+
+	let scoreText = `<b>Session progress:</b><br> ${appState.session.rounds} syllables solved, ${appState.session.goodGuesses} good guesses out of ${appState.session.guesses} (${Math.round((appState.session.goodGuesses / appState.session.guesses)*100)} %)<br>`;
+
+	for (let i = 0;  i < session.answers.length; i ++) {
+			scoreText += `Solved on ${ordinalNumbers[i]} guess: `;
+
+			let pinyins = [];
+
+			for (let pinyin of session.answers[i]) {
+				pinyins.push(`<a href="https://tone.lib.msu.edu/tone/${pinyin.id}" target="_blank">${pinyin.pinyin} ${pinyin.tone}</a>`);
+			}
+
+			scoreText += pinyins.join(", ") + "<br>";
+	}
+
+	scoreEl.innerHTML = scoreText;
 }
 
 
@@ -374,7 +417,7 @@ function selectAnswer(index) {
 	}
 
 	appState.guesses++;
-	appState.sessionGuesses++;
+	appState.session.guesses++;
 	buttons[index-1].dataset.guessed = true;
 
 	// Correct answer
@@ -383,7 +426,7 @@ function selectAnswer(index) {
 		buttons[index-1].classList.remove("btn-info");
 
 		answerEl.classList.add("show"); // Show answer
-		appState.sessionGoodGuesses++;
+		appState.session.goodGuesses++;
 
 		if (appState.guesses > 1) {
 			if (appState.guesses < 4) {
@@ -399,6 +442,8 @@ function selectAnswer(index) {
 			statusEl.innerHTML = "Correct! 😀 Try another one!";
 		}
 
+		appState.session.rounds++;
+		appState.session.answers[appState.guesses-1].push(appState.lastPlayed);
 		appState.solved = true;
 	}
 	// Incorrect answer
@@ -409,8 +454,7 @@ function selectAnswer(index) {
 		statusEl.innerHTML = "Wrong. Guess again! 😞";
 	}
 
-	document.getElementById("session-score").innerHTML = "<b>Session score:</b> " + appState.sessionRounds + " syllables, " + appState.sessionGoodGuesses + " good guesses out of " + appState.sessionGuesses + " (" + Math.round((appState.sessionGoodGuesses / appState.sessionGuesses)*100) + " %)";
-
+	updateScore("session-score", appState.session);
 	playLastAgain();
 }
 
@@ -430,24 +474,27 @@ function initUI() {
 		return false;
 	}
 
-	document.getElementById("btn-select1").onclick = function(event) {
-		selectAnswer(1);
-		return false;
-	}
+	getAnswerButtons().forEach( element => {
 
-	document.getElementById("btn-select2").onclick = function(event) {
-		selectAnswer(2);
-		return false;
-	}
-	document.getElementById("btn-select3").onclick = function(event) {
-		selectAnswer(3);
-		return false;
-	}
-	document.getElementById("btn-select4").onclick = function(event) {
-		selectAnswer(4);
-		return false;
-	}
+		element.onclick = function(event) {
+			//console.log(event);
+			if (event.target && event.target.dataset && event.target.dataset.tonenumber) {
+				let tonenumber = event.target.dataset.tonenumber;
+				tonenumber = parseInt(tonenumber);
 
+				if (tonenumber == NaN) {
+					console.warn("Tonenumber must be number", event.target.dataset.tonenumber);
+				}
+				else {
+					selectAnswer(tonenumber);
+				}
+			}
+			else {
+				console.warn("Cannot find tone-number on click event.");
+			}
+			return false;
+		}
+	});
 
 	document.addEventListener("keydown", function(event) {
 		let keyName = event.key;
