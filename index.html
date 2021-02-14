@@ -13,7 +13,7 @@
 	<p class="mt-1 mb-3">
 		<button id="btn-playnew" class="btn btn-primary btn-lg mt-2 fs-6" type="button">Play New <span id="btn-playnew-spinner" class="collapse spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
 		<input id="btn-repeat" type="button" class="btn btn-secondary btn-lg mt-2 fs-6" value="Repeat">	
-		<input id="btn-answer" type="button" class="btn btn-success btn-lg mt-2 fs-6" data-bs-toggle="collapse" data-bs-target="#answer" aria-expanded="false" aria-controls="answer" value="See Solution">
+		<input id="btn-solution" type="button" class="btn btn-success btn-lg mt-2 fs-6" data-bs-toggle="collapse" data-bs-target="#solution" aria-expanded="false" aria-controls="answer" value="See Solution">
 	</p>
 
 	<h5 class="fs-5 fw-bold mt-4 mb-2">Choose your answer:</h5>
@@ -25,9 +25,9 @@
 	</div>
 
 	<div id="status" class="mt-4 mb-1 fw-bold"></div>
-	<div id="answer" class="collapse mb-3 mt-4 p-2 card text-dark bg-light border-dark">
+	<div id="solution" class="collapse mb-3 mt-4 p-2 card text-dark bg-light border-dark">
 		<h5 class="fs-5 fw-bold">Solution:</h5>
-		<p id="answer-text">Press <b>Play New</b> first.</p>
+		<p id="solution-text">Press <b>Play New</b> first.</p>
 	</div>
 	<div id="session-score" class="mt-2 mb-3"></div>
 </div>
@@ -42,7 +42,7 @@
 		<li>Press <tt>Play New</tt> or <kbd>P</kbd> key or <kbd>8</kbd> key to play random Chinese syllable.</li>
 		<li>Press <tt>Repeat Last</tt> or <kbd>R</kbd> key or <kbd>5</kbd> key to repeat audio.</li>
 		<li>Press one of fours <tt>answer buttons</tt> or key <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd> to guess the answer.</li>
-		<!--li>Press <tt>Show Answer</tt> or <kbd>A</kbd> key or <kbd>6</kbd> key to show correct answer (there is a link for details about curren sound).</li-->
+		<!--li>Press <tt>Show Solution</tt> or <kbd>A</kbd> key or <kbd>6</kbd> key to show correct answer (there is a link for details about curren sound).</li-->
 		<li>Repeat with next sound.</li>
 	</ol>
 
@@ -292,7 +292,7 @@ function playNew() {
 	let p = chooseRandomPinyin();
 	appState.lastPlayed = p;
 
-	let answer = `<b>${p.pinyin} ${p.tone}</b> - tone details: <a href="https://tone.lib.msu.edu/tone/${p.id}" target="_blank">${p.syllable}  ${p.id}</a>`;
+	let solution = `<b>${p.pinyin} ${p.tone}</b> - tone details: <a href="https://tone.lib.msu.edu/tone/${p.id}" target="_blank">${p.syllable}  ${p.id}</a>`;
 
 	// Show spinning wheel during audio download
 	showSpinningWheel();
@@ -301,9 +301,9 @@ function playNew() {
 	let audio = playId(p.id, function() {
 		hideSpinningWheel();
 		resetAnswers();
-		setAnswerText(answer);
+		setSolutionText(solution);
 		document.getElementById("btn-repeat").disabled = false;
-		document.getElementById("btn-answer").disabled = false;
+		document.getElementById("btn-solution").disabled = false;
 	});
 
 	appState.lastAudio = audio;
@@ -354,11 +354,11 @@ function disableAnswers() {
 
 // prepare answer buttons for the next round
 function resetAnswers() {
-	let answerEl   = document.getElementById("answer");
+	let solutionEl   = document.getElementById("solution");
 	let statusEl   = document.getElementById("status");	
 	let buttons = getAnswerButtons();
 
-	answerEl.classList.remove("show"); // Hide answer
+	solutionEl.classList.remove("show"); // Hide solution
 	statusEl.innerHTML = "";
 
 	buttons.forEach( element => {
@@ -374,9 +374,9 @@ function resetAnswers() {
 }
 
 
-function setAnswerText(text) {
-	let answerEl = document.getElementById("answer-text");
-	answerEl.innerHTML = text;
+function setSolutionText(text) {
+	let solutionEl = document.getElementById("solution-text");
+	solutionEl.innerHTML = text;
 }
 
 
@@ -408,7 +408,7 @@ function selectAnswer(index) {
 		return; // already solved or didn't play tone yet
 	}
 
-	let answerEl = document.getElementById("answer");
+	let solutionEl = document.getElementById("solution");
 	let statusEl = document.getElementById("status");
 	let buttons = getAnswerButtons();
 
@@ -425,7 +425,7 @@ function selectAnswer(index) {
 		buttons[index-1].classList.add("btn-success");
 		buttons[index-1].classList.remove("btn-info");
 
-		answerEl.classList.add("show"); // Show answer
+		solutionEl.classList.add("show"); // Show solution
 		appState.session.goodGuesses++;
 
 		if (appState.guesses > 1) {
@@ -460,7 +460,7 @@ function selectAnswer(index) {
 
 function initUI() {
 
-	["btn-repeat", "btn-answer", "btn-select1", "btn-select2", "btn-select3", "btn-select4"].forEach(elementName => {
+	["btn-repeat", "btn-solution", "btn-select1", "btn-select2", "btn-select3", "btn-select4"].forEach(elementName => {
 		document.getElementById(elementName).disabled = true;
 	});
 
@@ -508,7 +508,7 @@ function initUI() {
 			playLastAgain();
 		}
 		else if (keyCode === "Digit6" || keyCode === "Numpad6" || (keyCode === "KeyA" && !event.altKey && !event.ctrlKey && !event.shiftKey && !event.metaKey)) {
-			document.getElementById("btn-answer").click();
+			document.getElementById("btn-solution").click();
 		}
 		else if (keyCode === "Digit1" || keyCode === "Numpad1") {
 			document.getElementById("btn-select1").click();
