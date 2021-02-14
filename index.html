@@ -408,7 +408,7 @@ function setSolution(current, alternatives) {
 			if (alternatives[i]) {
 				btn.classList.remove("collapse");
 				btn.dataset.playid = alternatives[i];
-				btn.title = `Tone Perfect ${current.syllable} ${alternatives[i]}`;
+				btn.title = `Tone Perfect: ${current.syllable}${current.tone} ${alternatives[i]}`;
 			}
 			else {
 				btn.classList.add("collapse");
@@ -424,16 +424,43 @@ function updateScore(scoreID, session) {
 
 	let scoreText = `<b>Session progress:</b><br> ${appState.session.rounds} syllables solved, ${appState.session.goodGuesses} good guesses out of ${appState.session.guesses} (${Math.round((appState.session.goodGuesses / appState.session.guesses)*100)} %)<br>`;
 
+	// Generate list of solved pinyins
 	for (let i = 0;  i < session.answers.length; i ++) {
 			scoreText += `Solved on ${ordinalNumbers[i]} guess: `;
 
 			let pinyins = [];
 
 			for (let pinyin of session.answers[i]) {
-				pinyins.push(`<a href="https://tone.lib.msu.edu/tone/${pinyin.id}" target="_blank">${pinyin.pinyin} ${pinyin.tone}</a>`);
+				pinyins.push(`<a href="https://tone.lib.msu.edu/tone/${pinyin.id}" target="_blank" title="Tone Perfect: ${pinyin.syllable}${pinyin.tone} ${pinyin.id}">${pinyin.pinyin} ${pinyin.tone}</a>`);
 			}
 
 			scoreText += pinyins.join(", ") + "<br>";
+	}
+
+	scoreText += `<b>Guessed on the first try:</b><br>`;
+
+	// Calculate success rate for all tones
+	let tonesGuessed1st = [0,0,0,0];
+	let tonesAll = [0,0,0,0];
+
+	// count tones guessed on the 1st try
+	for (let pinyin of session.answers[0]) {
+		tonesGuessed1st[pinyin.tone-1]++;
+	}
+
+	// count all tones on given session
+	for (let i = 0; i < tonesAll.length; i++) {
+		for (let pinyin of session.answers[i]) {
+			tonesAll[pinyin.tone-1]++;
+		}
+	}
+
+	for (let i = 0; i < tonesAll.length; i++) {
+		let rating;
+
+		if (tonesAll[i] != 0) {
+			scoreText += `Tone ${i+1}: ${Math.round(tonesGuessed1st[i]/tonesAll[i]*100)} %<br>`;
+		}
 	}
 
 	scoreEl.innerHTML = scoreText;
