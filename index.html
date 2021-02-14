@@ -27,7 +27,18 @@
 	<div id="status" class="mt-4 mb-1 fw-bold"></div>
 	<div id="solution" class="collapse mb-3 mt-4 p-2 card text-dark bg-light border-dark">
 		<h5 class="fs-5 fw-bold">Solution:</h5>
-		<p id="solution-text">Press <b>Play New</b> first.</p>
+		<p id="solution-text">
+			<span id="tone-details"></span>
+		</p>
+		<h6 class="fs-6 fw-bold">Listen to the same syllable by different voices:</h6>
+		<div id="alternative-tones">
+			<input id="btn-alternative1" type="button" class="btn btn-outline-secondary" value="Play Alternative 1">
+			<input id="btn-alternative2" type="button" class="btn btn-outline-secondary" value="Play Alternative 2">
+			<input id="btn-alternative3" type="button" class="btn btn-outline-secondary" value="Play Alternative 3">
+			<input id="btn-alternative4" type="button" class="btn btn-outline-secondary" value="Play Alternative 4">
+			<input id="btn-alternative5" type="button" class="btn btn-outline-secondary" value="Play Alternative 5">
+		</div>
+
 	</div>
 	<div id="session-score" class="mt-2 mb-3"></div>
 </div>
@@ -195,7 +206,7 @@ function playId(id, callback) {
 		id = parseInt(id);
 		if (id > 1000 && id < 12000) {
 			const url = `https://tone.lib.msu.edu/tone/${id}/datastream/PROXY_MP3`;
-			console.debug("Play", id);
+			//console.debug("Play", id);
 			return playURL(url, callback);
 		}
 	}
@@ -249,6 +260,17 @@ function chooseRandomPinyin() {
 	}
 }
 
+// Find alternative voices to the voice with `voiceId` for `pinyin` in `pinyinsToId`
+function getAlternativeVoiceIds(pinyinsToId, pinyin, voiceId) {
+	if (pinyinsToId[pinyin]) {
+		let allVoicesIds = pinyinsToId[pinyin];
+		let alternativeVoicesIds = allVoicesIds.filter( altVoiceId => altVoiceId != voiceId); // exclude current voiceId
+
+		// Sanitize, exclude all non-integer values
+		alternativeVoicesIds = alternativeVoicesIds.filter( item => parseInt(item) == item );
+		return alternativeVoicesIds;
+	}
+}
 
 // Simple sanitizer. Remove bad characters from pinyins
 function sanitizePinyin(text) {
@@ -292,7 +314,7 @@ function playNew() {
 	let p = chooseRandomPinyin();
 	appState.lastPlayed = p;
 
-	let solution = `<b>${p.pinyin} ${p.tone}</b> - tone details: <a href="https://tone.lib.msu.edu/tone/${p.id}" target="_blank">${p.syllable}  ${p.id}</a>`;
+	let alternativeVoicesIds = getAlternativeVoiceIds(appData.pinyinsToId, p.pinyin, p.id);
 
 	// Show spinning wheel during audio download
 	showSpinningWheel();
@@ -301,7 +323,7 @@ function playNew() {
 	let audio = playId(p.id, function() {
 		hideSpinningWheel();
 		resetAnswers();
-		setSolutionText(solution);
+		setSolution(p, alternativeVoicesIds);
 		document.getElementById("btn-repeat").disabled = false;
 		document.getElementById("btn-solution").disabled = false;
 	});
@@ -374,11 +396,27 @@ function resetAnswers() {
 }
 
 
-function setSolutionText(text) {
-	let solutionEl = document.getElementById("solution-text");
-	solutionEl.innerHTML = text;
-}
+function setSolution(current, alternatives) {
+	let toneDetailsEl = document.getElementById("tone-details");
+	let alternativeTonesEl = document.getElementById("alternative-tones");
 
+	toneDetailsEl.innerHTML = `<b>${current.pinyin} ${current.tone}</b> - [<a href="https://tone.lib.msu.edu/tone/${current.id}" target="_blank" title="Tone Perfect: ${current.syllable}${current.tone} ${current.id}">tone details</a>]`;
+
+	for (let i=0; i < 5; i++) {
+		let btn = document.getElementById("btn-alternative" + String(i+1));
+		if (btn) {
+			if (alternatives[i]) {
+				btn.classList.remove("collapse");
+				btn.dataset.playid = alternatives[i];
+				btn.title = `Tone Perfect ${current.syllable} ${alternatives[i]}`;
+			}
+			else {
+				btn.classList.add("collapse");
+				btn.dataset.playid = 0;
+			}
+		}
+	}
+}
 
 function updateScore(scoreID, session) {
 	let scoreEl = document.getElementById(scoreID);
@@ -467,12 +505,27 @@ function initUI() {
 	document.getElementById("btn-playnew").onclick = function(event) {
 		playNew();
 		return false;
-	}
+	};
 
 	document.getElementById("btn-repeat").onclick = function(event) {
 		playLastAgain();
 		return false;
-	}
+	};
+
+	["btn-alternative1", "btn-alternative2", "btn-alternative3", "btn-alternative4", "btn-alternative5"].forEach(elementName => {
+		let btn = document.getElementById(elementName);
+
+		btn.onclick = function(event) {
+			if (event.target && event.target.dataset && event.target.dataset.playid) {
+				let voiceid = parseInt(event.target.dataset.playid);
+				playId(voiceid);
+			}
+			else {
+				console.warn("Cannot find alternative playid during click event.");
+			}
+			return false;
+		}
+	});
 
 	getAnswerButtons().forEach( element => {
 
@@ -490,7 +543,7 @@ function initUI() {
 				}
 			}
 			else {
-				console.warn("Cannot find tone-number on click event.");
+				console.warn("Cannot find tone-number during click event.");
 			}
 			return false;
 		}
