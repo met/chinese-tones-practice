@@ -185,7 +185,7 @@ function playId(id, callback) {
 	if (id && parseInt(id)) {
 		id = parseInt(id);
 		if (id > 1000 && id < 12000) {
-			const url = `https://tone.lib.msu.edu/tone/${id}/datastream/PROXY_MP3`;
+			const url = `https://tone.lib.msu.edu/tone/${id}/PROXY_MP3/view`;
 			console.debug("Play", id);
 			playURL(url, callback);
 		}
